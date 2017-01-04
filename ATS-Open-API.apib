@@ -1,0 +1,257 @@
+FORMAT: 1.0.0
+HOST: https://api.ats.com
+
+# 第三方 ATS Open API 平台开发概述
+第三方 ATS（以下简称：**ATS**） Open API 平台主要是提供给猎必得平台分享其招聘数据给第三方合作伙伴平台使用的一个接口平台。
+
+具体业务时序如下：
+
+![ATS-Open-API-时序图，可另存为打开查看原图](https://raw.githubusercontent.com/8azaDev/lbd-open-api/master/LBD-Open-API-时序图.20170104.png)
+
+# Group OAuth 授权
+
+## 授权页 [/oauth2.0/authorize?responseType=code{&responseType,clientId,clientSecret,redirectURL}]
+
+### 提交授权信息 [GET]
+
++ Parameters
+    + clientId: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - LBD OAuth 给予的 Client Id
+    + clientSecret: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - LBD OAuth 给予的 Client Secret
+    + redirectURL: `http://api.ats.com/callback/transfer-job/{jobId}` (string, required) - 返回 LBD 授权码的接收页面
+
++ Response 301
+    + Header
+        Location: http://api.ats.com/oauth2.0/authorize?responseType=code&clientId=xxxxxxxxxxxxxxx&clientSecret=xxxxxxxxxxxxxxx&redirectURL={redirectURL}&atsClientId=xxxxxxxxxxxxxxx
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 401 (number, required)
+            + errorMessage: 不合法的clientId数据 (string, required)
+
+## 授权回调页 [/callback/init-user-info(?code, atsClientId, atsClientSecret, atsReturnURL)]
+
+### 返回授权码 [GET]
+
++ Parameters
+    + code: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - 返回的 ATS 授权码
+    + atsClientId: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - LBD OAuth 给予的 Client Id
+    + atsClientSecret: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - LBD OAuth 给予的 Client Secret
+    + atsReturnURL: `http://api.ats.com/callback/transfer-job/{jobId}` (string, required) - 返回 LBD 授权码的接收页面
+
++ Response 301
+    + Header
+        Location: http://api.ats.com/callback/transfer-job/{jobId}?code={返回的 LBD 授权码}
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 401 (number, required)
+            + errorMessage: 不合法的clientId数据 (string, required)
+
+## 返回 Access Token 页 [/oauth2.0/token]
+
+### 返回 LBD Access Token [GET]
+
++ Parameters
+    + code: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - 返回的 LBD 授权码
+
++ Response 200 (application/json)
+    + Attributes
+        + success: true (boolean, required) - 提交是否成功
+        + data (object)
+            + accessToken: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 返回的 LBD Access Token
+            + refreshToken: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 返回的 LBD Refresh Token
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 401 (number, required)
+            + errorMessage: 用户已经存在 (string, required)
+
+## 授权页 [/oauth2.0/authorize]
+
+### 提交授权信息 [POST]
+
++ Request (application/json)
+    + Attributes
+        + agreeTermOfService: true (boolean, required) - 是否已阅并同意《猎必得用户协议》
+        + scope: 公司信息, 用户信息, 职位信息 (array, required) - 授权给猎必得获取的第三方平台信息
+        + company (object)
+            + id: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - 第三方系统中的公司Id
+            + name: 深圳八爪网络科技有限公司 (string, required) - 公司全称
+            + shortName: 八爪网络 (string, required) - 公司简称
+            + industry: 互联网 (string, optional) - 公司所在行业
+            + location: 深圳  (string, optional) - 公司所在城市
+            + scale: 100 (number, optional) - 公司的最小规模人数
+            + address: 深圳市南山区南海大道万海大厦C座 (string, optional) - 公司所在地址
+            + introduction: 深圳八爪网络科技有限公司是一家致力于通过互联网技术改变招聘效率与个人求职体验的科技公司。 (string, optional) - 公司介绍
+        + poster (object)
+            + id: `a8d589d9-375e-4edf-8c8b-6f2ebce082e3` (string, required) - 第三方系统中的当前用户Id
+            + mobile: 13800138000 (string, required) - 当前用户的手机号
+            + email: api@liebide.com (string, required) - 当前用户的邮箱
+            + realName: 猎必得 (string, required) - 当前用户的真实姓名
+            + nickname: LBD (string, required) - 当前用户的昵称
+
++ Response 200 (application/json)
+    + Attributes
+        + success: true (boolean, required) - 提交是否成功
+        + data (object)
+            + firmId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在LBD平台上的对应公司Id
+            + userId: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 在LBD平台上的对应用户Id
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 401 (number, required)
+            + errorMessage: 用户已经存在 (string, required)
+
+## 职位 [/jobs]
+
+### 提交职位信息 [POST]
+
++ Request (application/json)
+    + Attributes
+        + companyId: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - 第三方系统中的公司Id
+        + posterId: `a8d589d9-375e-4edf-8c8b-6f2ebce082e3` (string, required) - 第三方系统中的当前用户Id
+        + id: `6304b4d5-7ff1-4c70-b234-d9918f60e0a7` (string, required) - 第三方系统中的当前职位Id
+        + name: .NET 软件开发工程师 (string, required) - 当前职位名称
+        + category: .NET (string, required) - 当前职位类别名称
+        + location: 深圳 (string, required) - 当前职位所在城市
+        + recruitingCount: 5 (number, required) - 当前职位的招聘人数
+        + degree: 本科 (string, required) - 当前职位的最低学历
+        + yearOfExperience: 3 (number, required) - 当前职位的最低工作年限
+        + minSalary: 7000 (string, required) - 当前职位的最低工资（以“元”为单位）
+        + maxSalary: 12000 (string, required) - 当前职位的最高工资（以“元”为单位）
+        + description: 熟悉.NET Framework... (string, required) - 当前职位的的描述
+        + analysis: 熟悉.NET Framework (string, optional) - 当前职位的分析描述
+        + commission (object)
+            + type: 0 (number, required) - 当前职位的的佣金分成方式：0，代表按薪资比例；1，代表按固定佣金
+            + value: 8 (number, required) - 当前职位的佣金分成比例或固定金额：type为 0 时，请填写百分数的分子数，如80（表示分成比例为80%）；type为 1 时，请填写固定金额，以“元”为单位
+        + guaranteePeriod: 3 - 当前职位的保证期，以月为单元，默认为0，可选填 3 或 6
+        + paymentPropotionPolicy (object)
+            + onboard: 80 (number, required) - 当前职位的入职时付款约定比例，请填写百分数的分子数，如80（表示分成比例为80%）
+            + overProtection: 20 (number, required) - 当前职位的过保时付款约定比例，请填写百分数的分子数，如80（表示分成比例为80%）
+        + refundPropotionPolicy (object) - 请填写百分数的分子数，如80（表示分成比例为80%）
+            + inOneMonth: 80 (number, required) - 当前职位的候选人入职一个月内离职的退款比例
+            + inTwoMonth: 20 (number, required) - 当前职位的候选人入职二个月内离职的退款比例
+            + inThreeMonth: 20 (number, required) - 当前职位的候选人入职三个月内离职的退款比例
+            + overThreeMonth: 20 (number, required) - 当前职位的候选人入职超过三个月但还在保证期内离职的退款比例
+
++ Response 200 (application/json)
+    + Attributes
+        + success: true (boolean, required) - 提交是否成功
+        + data (object)
+            + firmId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在LBD平台上的对应公司Id
+            + userId: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 在LBD平台上的对应用户Id
+            + jobId: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 在LBD平台上的对应职位Id
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 100 (number, required)
+            + errorMessage: 用户不存在 (string, required)
+
+## 候选人 [/]
+当LBD平台的猎头用户对第三方平台分享过来的职位进行候选人推荐时，LBD平台会同步推送一个POST请求事件给**第三方平台的回调地址**。
+```
+第三方平台的回调地址在平台后台管理中进行配置。
+```
+### 同步候选人信息给第三方平台 [POST]
++ Request (application/json)
+    + Attributes
+        + originalInfo (object)
+          + companyId: `cae50892-0b21-4d96-80f8-45432ebf338d` (string, required) - 第三方系统中的公司Id
+          + posterId: `a8d589d9-375e-4edf-8c8b-6f2ebce082e3` (string, required) - 第三方系统中的职位分享者用户Id
+          + jobId: `6304b4d5-7ff1-4c70-b234-d9918f60e0a7` (string, required) - 第三方系统中分享的职位Id
+        + lbdInfo (object)
+          + firmId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在LBD平台上的对应公司Id
+          + userId: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 在LBD平台上的对应用户Id
+          + jobId: `4531e0ad-cede-41d2-b1b7-a3a465c04bd6` (string, required) - 在LBD平台上的对应职位Id
+        + headHunter (object)
+          + userId: `drhgy123-edce-dd32-bb17-a3a5c04b46d6` (string, required) - LBD平台上此候选人的推荐猎头用户Id
+          + mobile: 13800138410 (string, required) - LBD平台上此候选人的推荐猎头用户的手机号
+          + email: 13800138410@liebide.com (string, required) - LBD平台上此候选人的推荐猎头用户的Email邮箱
+          + realName: 猎大 (string, required) - LBD平台上此候选人的推荐猎头用户的真实姓名
+        + candidate (object)
+          + id: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在LBD平台上的候选人Id
+          + realName: 猎必得 (string, required) - 候选人姓名
+          + moblie: 13800138000 (string, required) - 候选人手机
+          + email: candidate@liebide.com (string, required) - 候选人邮箱
+          + location: 深圳 (string, required) - 候选人当前所在城市
+          + companyName: 腾讯 (string, required) - 候选人当前所在公司名称
+          + companyTitle: 产品经理 (string, required) - 候选人当前所在公司职位Title
+          + yearOfExperience: 10 (number, required) - 候选人工作年限
+          + school: 深圳大学 (string, required) - 候选人的毕业院校
+          + major: 哲学 (string, required) - 候选人的专业
+          + degree: 本科 (string, required) - 候选人的学历
+          + content: 天之道，损有余而补不足... (string, required) - 简历原文
+          + attachments (array)
+              + (object)
+                  + fileName: 学位证书 (string, required) - 附件名称
+                  + fileId: `6304b4d5-7ff1-4c70-b234-d9918f60e0a7` (string, required) - 附件文件Id
+
++ Response 200 (application/json)
+    + Attributes
+        + success: true (boolean, required) - 提交是否成功
+        + data (object)
+            + candidateId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在第三方平台上的对应候选人Id
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 402 (number, required)
+            + errorMessage: 用户不存在 (string, required)
+
+## 候选人简历相关附件 [/candidates/attachments/{fileId}]
+
++ Parameters
+    + fileId: `6304b4d5-7ff1-4c70-b234-d9918f60e0a7` (required, string) - 请求下载的文件Id
+
+
+### 返回附件文件的二进制流数据给第三方平台 [GET]
++ Response 200 (application/octet-stream)
+
+# Group 八爪网络各业务线调用
+
+## 候选人 [/candidates/]
+
+## 同步候选人信息给第三方平台 [PUT /candidates/{candidateId}/transfer]
+
++ Parameters
+    + candidateId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (required, string) - 要同步的候选人Id
+
++ Response 200 (application/json)
+    + Attributes
+        + success: true (boolean, required) - 提交是否成功
+        + data (object)
+            + candidateId: `2cfcf76e-1813-4aef-9a11-8080585b3ccc` (string, required) - 在第三方平台上的对应候选人Id
+
++ Response 400 (application/json)
+    + Attributes
+        + success: false (boolean, required) - 提交是否成功
+        + data (object)
+            + errorCode: 403 (number, required)
+            + errorMessage: 对方服务器出错 (string, required)
+
+# Group 接口返回码说明
+每次调用平台接口时，可能获得正确或错误的返回码，开发者可以根据返回码信息调试接口，排查错误。
+全局返回码说明如下：
+返回码 | 说明
+------|------------------------------------
+100   | 不合法的{字段名称}数据
+101   | 请阅读并同意《猎必得用户协议》
+102   | 当前用户在猎必得平台中已加入另一家公司
+103   | 当前公司、用户信息已经存在猎必得平台，无需重复授权。
+104   | 提交的公司Id不存在
+105   | 提交的用户Id不存在
+106   | 提交的职位Id不存在
+107   | 请求的文件Id不存在
+108   | 提交的候选人Id不存在
+109   | 第三方平台处理失败
